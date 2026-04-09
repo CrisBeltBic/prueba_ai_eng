@@ -1,0 +1,65 @@
+services:
+
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - vector_database:/chroma/.chroma/index
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      retries: 5
+
+  chat_service:
+    build:
+      context: .
+      dockerfile: chat_service/Dockerfile
+    ports:
+      - "8082:8082"
+    volumes:
+      - chat_database:/app/data
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 10s
+      retries: 5
+
+  agent_service:
+    build:
+      context: .
+      dockerfile: agent_service/Dockerfile
+    ports:
+      - "8080:8080"
+    env_file: .env
+    depends_on:
+      chromadb:
+        condition: service_healthy
+      chat_service:
+        condition: service_healthy
+
+  frontend_service:
+    build:
+      context: .
+      dockerfile: frontend_service/Dockerfile
+    ports:
+      - "8501:8501"
+    env_file: .env
+    depends_on:
+      - agent_service
+      - chat_service
+
+  ingestion_service:
+    build:
+      context: .
+      dockerfile: ingestion_service/Dockerfile
+    env_file: .env
+    profiles:
+      - pipeline
+    depends_on:
+      chromadb:
+        condition: service_healthy
+
+volumes:
+  vector_database:
+  chat_database:
