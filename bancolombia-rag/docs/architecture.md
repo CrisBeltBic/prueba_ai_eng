@@ -13,6 +13,7 @@ flowchart LR
         Agent[agent_service]
         Knowledge[knowledge_service]
         Chat[chat_service]
+        VectorStore[vector_store_service]
         VectorDB[(vector_database)]
         ChatDB[(chat_database)]
     end
@@ -27,10 +28,11 @@ flowchart LR
     Agent --> Knowledge
     Agent --> Chat
     Agent --> LLM
-    Knowledge --> VectorDB
+    Knowledge --> VectorStore
+    VectorStore --> VectorDB
     Chat --> ChatDB
     Ingestion --> Web
-    Ingestion --> VectorDB
+    Ingestion --> VectorStore
 ```
 
 ---
@@ -44,6 +46,7 @@ sequenceDiagram
         participant F as frontend_service
         participant A as agent_service
         participant K as knowledge_service
+        participant V as vector_store_service
         participant C as chat_service
     end
     box External
@@ -54,6 +57,8 @@ sequenceDiagram
     F->>A: question
     A->>C: get chat history
     A->>K: search relevant content
+    K->>V: semantic search
+    V-->>K: context + sources
     K-->>A: context + sources
     A->>L: question + context + history
     L-->>A: answer
@@ -70,11 +75,11 @@ sequenceDiagram
 sequenceDiagram
     participant I as ingestion_service
     participant W as Bancolombia Web
-    participant D as vector_database
+    participant V as vector_store_service
 
     loop for each page
         I->>W: fetch content
         I->>I: clean, chunk, embed
-        I->>D: store
+        I->>V: store vectors
     end
 ```
