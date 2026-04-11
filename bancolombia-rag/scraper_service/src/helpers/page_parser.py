@@ -1,3 +1,17 @@
+"""
+HTML parsing helpers for bancolombia.com.
+
+Parse strategy (in order):
+  1. __NEXT_DATA__ — Bancolombia's site is a Next.js app. The server embeds a JSON blob
+     in a <script id="__NEXT_DATA__"> tag that contains the pre-rendered page props,
+     including cleaned text fields. This gives us structured content without needing
+     to strip navigation, ads, or repeated chrome.
+  2. BeautifulSoup fallback — if Next.js data is absent or yields no usable text,
+     we remove layout noise (nav, footer, header, aside) and extract the main body.
+
+Pages with fewer than 100 characters after cleaning are discarded as empty/error pages.
+"""
+
 import json
 import re
 from urllib.parse import urljoin, urlparse
@@ -30,9 +44,14 @@ def parse_page(html: str, url: str) -> dict | None:
     return result
 
 
-# ── private helpers ────────────────────────────────────────────────────────────
-
 def _parse_next_data(soup: BeautifulSoup, url: str) -> dict | None:
+    """Extracts content from the Next.js __NEXT_DATA__ JSON blob.
+
+    Next.js embeds the full page props as JSON so the client can hydrate without
+    a second request. For content pages this usually has 'content', 'body', or
+    'description' at the top level of pageProps. If none of those exist, _flatten
+    walks the props tree and concatenates any string longer than 20 chars.
+    """
     tag = soup.find("script", {"id": "__NEXT_DATA__"})
     if not tag:
         return None
@@ -63,6 +82,12 @@ def _get_title(soup: BeautifulSoup) -> str:
 
 
 def _flatten(data: dict, depth: int = 0) -> str:
+    """Recursively collects string values from a nested dict.
+
+    Used as a last-resort when no known field name ('content', 'body', etc.) is found
+    in pageProps. Depth is capped at 4 to avoid traversing arbitrarily deep React trees.
+    Only strings longer than 20 chars are kept to filter out IDs, class names, and booleans.
+    """
     if depth > 4:
         return ""
     parts = []

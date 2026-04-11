@@ -1,3 +1,14 @@
+"""
+Scraper business logic.
+
+Two-phase pipeline:
+  Phase 1 — _crawl:            BFS from /personas, collecting allowed URLs up to max_pages.
+  Phase 2 — _scrape_and_save:  Fetches each URL, parses the page, appends to pages.jsonl.
+
+robots.txt is loaded once at the start of each job and checked before every request.
+Concurrency is controlled by asyncio.Semaphore to limit simultaneous open connections.
+"""
+
 import asyncio
 import json
 import uuid
@@ -13,7 +24,7 @@ from helpers.page_parser import extract_links, parse_page
 _jobs: dict[str, dict[str, Any]] = {}
 
 
-# ── Job management ─────────────────────────────────────────────────────────────
+#Job management
 
 def create_job() -> str:
     job_id = str(uuid.uuid4())
@@ -31,7 +42,7 @@ def list_jobs() -> list[dict]:
     return [{"job_id": jid, **s} for jid, s in _jobs.items()]
 
 
-# ── robots.txt ─────────────────────────────────────────────────────────────────
+# robots.txt
 
 def _load_robots(base_url: str, user_agent: str) -> RobotFileParser:
     """Fetches and parses robots.txt. If unreachable, allows everything."""
@@ -49,7 +60,7 @@ def _is_allowed(rp: RobotFileParser, url: str, user_agent: str) -> bool:
     return rp.can_fetch(user_agent, url)
 
 
-# ── Pipeline ───────────────────────────────────────────────────────────────────
+# Pipeline
 
 async def run_scraper(job_id: str, max_pages: int, delay: float) -> None:
     """Crawls /personas, parses each page and saves results to a JSONL file."""
@@ -68,6 +79,11 @@ async def run_scraper(job_id: str, max_pages: int, delay: float) -> None:
 
 
 async def _crawl(max_pages: int, delay: float, status: dict, rp: RobotFileParser) -> list[str]:
+    """BFS from start_path. Collects unique /personas URLs up to max_pages.
+
+    Disallowed URLs are added to `visited` immediately so they are never retried.
+    The semaphore limits open connections; the delay after each fetch is the politeness gap.
+    """
     visited: set[str] = set()
     queue: list[str] = [settings.base_url + settings.start_path]
     headers = {"User-Agent": settings.user_agent}
@@ -81,7 +97,7 @@ async def _crawl(max_pages: int, delay: float, status: dict, rp: RobotFileParser
                 continue
 
             if not _is_allowed(rp, url, settings.user_agent):
-                visited.add(url)  # mark as visited so we don't retry
+                visited.add(url)  # mark visited so we don't retry disallowed URLs
                 continue
 
             async with semaphore:
@@ -104,7 +120,7 @@ async def _scrape_and_save(urls: list[str], delay: float, status: dict, rp: Robo
     headers = {"User-Agent": settings.user_agent}
 
     raw_file.parent.mkdir(parents=True, exist_ok=True)
-    raw_file.unlink(missing_ok=True)
+    raw_file.unlink(missing_ok=True)  # truncate before writing so re-runs don't duplicate lines
 
     async with httpx.AsyncClient(headers=headers, timeout=10, follow_redirects=True) as client:
         for url in urls:
