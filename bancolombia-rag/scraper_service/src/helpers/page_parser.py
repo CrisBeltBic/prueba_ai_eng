@@ -1,4 +1,3 @@
-import hashlib
 import json
 import re
 from urllib.parse import urljoin, urlparse
@@ -31,24 +30,6 @@ def parse_page(html: str, url: str) -> dict | None:
     return result
 
 
-def split_into_chunks(page: dict, size: int = 512, overlap: int = 64) -> list[dict]:
-    """Splits a page's text into overlapping chunks keeping metadata."""
-    chunks = _split(page["text"], size, overlap)
-    return [
-        {
-            "chunk_id": _make_id(page["url"], i),
-            "url": page["url"],
-            "title": page["title"],
-            "category": page["category"],
-            "text": chunk,
-            "chunk_index": i,
-            "total_chunks": len(chunks),
-            "scraped_at": page["scraped_at"],
-        }
-        for i, chunk in enumerate(chunks)
-    ]
-
-
 # ── private helpers ────────────────────────────────────────────────────────────
 
 def _parse_next_data(soup: BeautifulSoup, url: str) -> dict | None:
@@ -76,31 +57,6 @@ def _parse_html(soup: BeautifulSoup, url: str) -> dict | None:
     return {"url": url, "title": _get_title(soup), "text": clean(main.get_text(separator=" ")), "category": get_category(url)}
 
 
-def _split(text: str, size: int, overlap: int) -> list[str]:
-    for sep in ["\n\n", "\n", ". ", " "]:
-        parts = [p.strip() for p in text.split(sep) if p.strip()]
-        chunks = _merge(parts, size, overlap, sep)
-        if len(chunks) > 1:
-            return chunks
-    return [text[i : i + size] for i in range(0, len(text), size - overlap)]
-
-
-def _merge(parts: list[str], size: int, overlap: int, sep: str) -> list[str]:
-    chunks: list[str] = []
-    current = ""
-    for part in parts:
-        candidate = f"{current}{sep}{part}".strip() if current else part
-        if len(candidate) <= size:
-            current = candidate
-        else:
-            if current:
-                chunks.append(current)
-            current = current[-overlap:] + sep + part if overlap else part
-    if current:
-        chunks.append(current)
-    return chunks
-
-
 def _get_title(soup: BeautifulSoup) -> str:
     tag = soup.find("h1") or soup.find("title")
     return tag.get_text(strip=True) if tag else "Sin título"
@@ -125,7 +81,3 @@ def clean(text: str) -> str:
 def get_category(url: str) -> str:
     parts = urlparse(url).path.strip("/").split("/")
     return parts[1] if len(parts) > 1 else "general"
-
-
-def make_id(url: str, index: int) -> str:
-    return hashlib.sha256(f"{url}:{index}".encode()).hexdigest()[:16]

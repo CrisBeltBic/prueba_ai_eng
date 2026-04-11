@@ -19,3 +19,8 @@ def health():
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8083, reload=True)
+
+#docker build -t scraper_service .
+
+#docker run --env-file .env -p 8083:8083 scraper_service
+
