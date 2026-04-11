@@ -1,5 +1,22 @@
 services:
 
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: chat_db
+      POSTGRES_USER: chat_user
+      POSTGRES_PASSWORD: chat_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - chat_database:/var/lib/postgresql/data
+      - ./postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat_user -d chat_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   chromadb:
     image: chromadb/chroma:0.5.3
     ports:
@@ -54,11 +71,27 @@ services:
     profiles:
       - pipeline
 
-  # chat_service:      ← pendiente
+  chat_service:
+    build:
+      context: chat_service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8082/health')\""]
+      interval: 10s
+      start_period: 10s
+      retries: 5
+
   # agent_service:     ← pendiente
   # frontend_service:  ← pendiente
 
 volumes:
   vector_database:
-  chat_database:
+  chat_database:    # mounted by postgres container
   raw_data:
