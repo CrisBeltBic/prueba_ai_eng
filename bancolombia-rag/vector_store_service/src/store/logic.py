@@ -1,3 +1,17 @@
+"""
+Business logic for the vector store service.
+
+Responsibilities:
+- Ingestion pipeline: read pages.jsonl → chunk → embed → upsert into the vector store.
+- Semantic search: embed the query → retrieve top-k chunks → expand each result with
+  its neighboring chunks (prev + match + next) so the LLM receives richer context.
+- Job tracking: each long-running operation (ingest) gets a UUID so the caller can
+  poll for status without blocking.
+
+The vector store is initialised lazily on first use (_get_store). This avoids a crash
+at startup if ChromaDB is not yet ready, and lets the health check respond immediately.
+"""
+
 import json
 import uuid
 from datetime import datetime
@@ -14,13 +28,14 @@ _jobs: dict[str, dict[str, Any]] = {}
 
 
 def _get_store() -> VectorStore:
+    """Lazy singleton — creates the adapter on first call, reuses it afterwards."""
     global _store
     if _store is None:
         _store = create_vector_store()
     return _store
 
 
-# ── Job management ─────────────────────────────────────────────────────────────
+#Job management 
 
 def create_job() -> str:
     job_id = str(uuid.uuid4())
@@ -34,10 +49,16 @@ def get_job_status(job_id: str) -> dict:
     return {"job_id": job_id, **_jobs[job_id]}
 
 
-# ── Ingestion pipeline ─────────────────────────────────────────────────────────
+# Ingestion pipeline 
 
 def run_ingest(job_id: str) -> None:
-    """Reads pages.jsonl, chunks each page, embeds and upserts into the vector store."""
+    """Reads pages.jsonl, chunks each page, embeds and upserts into the vector store.
+
+    Pipeline per page:
+      1. split_into_chunks  — recursive text splitter, produces overlapping char-windows
+      2. embed_texts        — batch encode via sentence-transformers (batch_size=32)
+      3. upsert             — idempotent write; re-running is safe (chunk_id is deterministic)
+    """
     status = _jobs[job_id]
     raw_file = settings.raw_file
 
@@ -67,7 +88,7 @@ def run_ingest(job_id: str) -> None:
     status["finished_at"] = datetime.utcnow().isoformat()
 
 
-# ── Search ─────────────────────────────────────────────────────────────────────
+#  Search
 
 def search(query: str, top_k: int, category: str | None) -> list[dict]:
     """Semantic search — returns top_k matches each expanded with neighbor chunks."""
@@ -81,10 +102,12 @@ def search(query: str, top_k: int, category: str | None) -> list[dict]:
 
 
 def _build_context(url: str, chunk_index: int) -> str:
-    """Fetches prev + current + next chunks from the same page and concatenates them."""
-    all_chunks = _get_store().get_by_url(url)
+    """Returns the matched chunk plus its immediate neighbours from the same page.
 
-    # index chunks by position
+    Sending prev + match + next to the LLM recovers context that was cut at chunk
+    boundaries. Missing neighbours (first/last chunk) are silently skipped.
+    """
+    all_chunks = _get_store().get_by_url(url)
     by_index = {c["chunk_index"]: c["text"] for c in all_chunks}
 
     parts = []
@@ -95,7 +118,7 @@ def _build_context(url: str, chunk_index: int) -> str:
     return " ".join(parts)
 
 
-# ── Passthrough to store ───────────────────────────────────────────────────────
+#Passthrough to store
 
 def get_by_url(url: str) -> list[dict]:
     return _get_store().get_by_url(url)
@@ -109,7 +132,7 @@ def get_stats() -> dict:
     return _get_store().get_stats()
 
 
-# ── Private helpers ────────────────────────────────────────────────────────────
+#Private helpers
 
 def _read_jsonl(path) -> list[dict]:
     pages = []

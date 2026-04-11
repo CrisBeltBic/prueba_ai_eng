@@ -1,3 +1,13 @@
+"""
+VectorStore Protocol — the contract every database adapter must satisfy.
+
+Adding a new backend (e.g. pgvector, Pinecone) means:
+  1. Create a new file in this folder that implements this Protocol.
+  2. Add a new case in store/bridge/factory.py.
+  3. Set VECTOR_STORE_PROVIDER in .env.
+No other code needs to change.
+"""
+
 from typing import Protocol
 
 
