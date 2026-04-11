@@ -10,29 +10,33 @@ flowchart LR
 
     subgraph Online
         Front[frontend_service]
-        Agent[agent_service]
-        Knowledge[knowledge_service]
+        subgraph agent_service
+            Agent[agent]
+            MCP[knowledge_server\nstdio subprocess]
+        end
         Chat[chat_service]
         VectorStore[vector_store_service]
-        VectorDB[(vector_database)]
-        ChatDB[(chat_database)]
+        VectorDB[(vector_database\nChromaDB)]
+        ChatDB[(chat_database\nPostgreSQL)]
     end
 
     subgraph Pipeline
-        Ingestion[ingestion_service]
+        Scraper[scraper_service]
+        PipelineRunner[pipeline_runner]
     end
 
     User --> Front
     Front --> Agent
     Front --> Chat
-    Agent --> Knowledge
+    Agent --> MCP
     Agent --> Chat
     Agent --> LLM
-    Knowledge --> VectorStore
+    MCP --> VectorStore
     VectorStore --> VectorDB
     Chat --> ChatDB
-    Ingestion --> Web
-    Ingestion --> VectorStore
+    PipelineRunner --> Scraper
+    PipelineRunner --> VectorStore
+    Scraper --> Web
 ```
 
 ---
@@ -45,7 +49,7 @@ sequenceDiagram
     box Internal Services
         participant F as frontend_service
         participant A as agent_service
-        participant K as knowledge_service
+        participant K as knowledge_server (stdio)
         participant V as vector_store_service
         participant C as chat_service
     end
@@ -54,15 +58,15 @@ sequenceDiagram
     end
 
     U->>F: question
-    F->>A: question
-    A->>C: get chat history
-    A->>K: search relevant content
-    K->>V: semantic search
-    V-->>K: context + sources
+    F->>A: POST /chat
+    A->>C: GET /chats/{id}/messages
+    A->>K: search_knowledge_base (MCP tool)
+    K->>V: POST /search
+    V-->>K: chunks + sources
     K-->>A: context + sources
     A->>L: question + context + history
     L-->>A: answer
-    A->>C: save messages
+    A->>C: POST /chats/messages (user + assistant)
     A-->>F: answer + sources
     F-->>U: answer + sources
 ```
@@ -73,13 +77,19 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant I as ingestion_service
-    participant W as Bancolombia Web
+    participant P as pipeline_runner
+    participant S as scraper_service
     participant V as vector_store_service
+    participant D as vector_database
 
-    loop for each page
-        I->>W: fetch content
-        I->>I: clean, chunk, embed
-        I->>V: store vectors
-    end
+    P->>S: POST /scraper/start
+    P->>S: GET /scraper/status (poll)
+    S->>S: BFS crawl bancolombia.com/personas
+    S-->>P: phase=done
+
+    P->>V: POST /ingest/start
+    P->>V: GET /ingest/status (poll)
+    V->>V: chunk + embed + upsert
+    V->>D: store vectors
+    V-->>P: phase=done
 ```
