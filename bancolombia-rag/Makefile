@@ -1,17 +1,17 @@
 .PHONY: run stop pipeline logs-scraper logs-store logs-pipeline test lint format
 
-# ── Runtime stack ──────────────────────────────────────────────────────────────
+# Runtime stack 
 run:
 	docker compose up --build
 
 stop:
 	docker compose down -v
 
-# ── Data pipeline (scrape → embed → index) ─────────────────────────────────────
+# Data pipeline (scrape → embed → index)
 pipeline:
 	docker compose --profile pipeline up --build pipeline_runner
 
-# ── Logs ───────────────────────────────────────────────────────────────────────
+# Logs 
 logs-scraper:
 	docker compose logs -f scraper_service
 
@@ -21,7 +21,7 @@ logs-store:
 logs-pipeline:
 	docker compose logs -f pipeline_runner
 
-# ── Quality ────────────────────────────────────────────────────────────────────
+# Quality 
 test:
 	pytest tests/ -v
 
