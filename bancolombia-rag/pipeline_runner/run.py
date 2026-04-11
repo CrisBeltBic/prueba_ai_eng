@@ -1,12 +1,18 @@
 """
-Pipeline runner — runs once at startup to populate the knowledge base.
+Pipeline runner — runs once to populate the knowledge base, then exits.
 
-Steps:
-  1. POST /scraper/start     → crawl bancolombia.com/personas → pages.jsonl
-  2. Poll until scraping done
-  3. POST /ingest/start      → chunk + embed + upsert into ChromaDB
-  4. Poll until ingestion done
+This is not a long-running service. It is a one-shot orchestrator that fires the
+two async jobs in order and blocks until each finishes:
+
+  1. POST /scraper/start         → BFS crawl of bancolombia.com/personas → pages.jsonl
+  2. Poll /scraper/status/{id}   → wait until phase == "done" (or exit 1 on error)
+  3. POST /ingest/start          → read pages.jsonl → chunk → embed → upsert ChromaDB
+  4. Poll /ingest/status/{id}    → wait until phase == "done" (or exit 1 on error)
   5. Exit 0
+
+docker-compose runs this under the `pipeline` profile so it only starts when explicitly
+requested (`make pipeline`). The `depends_on` health checks ensure scraper_service and
+vector_store_service are ready before this container starts.
 """
 
 import os
@@ -37,6 +43,12 @@ def get(url: str) -> dict:
 
 
 def poll_until_done(status_url: str, job_id: str) -> None:
+    """Blocks until the remote job reaches phase 'done'. Exits the process on error.
+
+    Both scraper and vector_store follow the same job-status contract:
+      { phase: "starting" | "crawling" | "scraping" | "reading" | "indexing" | "done" | "error" }
+    so this single poller works for both services.
+    """
     while True:
         status = get(f"{status_url}/{job_id}")
         phase = status.get("phase", "unknown")
