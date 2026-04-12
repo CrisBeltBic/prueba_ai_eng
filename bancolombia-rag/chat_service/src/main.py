@@ -8,7 +8,7 @@ from db import close_pool, init_pool
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_pool()   # open connection pool at startup
+    await init_pool()   # open db postgresql connection pool at startup
     yield
     await close_pool()  # close gracefully on shutdown
 
