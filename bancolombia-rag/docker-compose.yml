@@ -36,11 +36,11 @@ services:
     depends_on:
       - chromadb
     restart: on-failure
-    # healthcheck:
-    #   test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8084/health')\""]
-    #   interval: 10s
-    #   start_period: 15s
-    #   retries: 5
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8084/health')\""]
+      interval: 10s
+      start_period: 30s
+      retries: 5
 
   scraper_service:
     build:
@@ -51,11 +51,11 @@ services:
     volumes:
       - raw_data:/app/data
     env_file: .env
-    # healthcheck:
-    #   test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8083/health')\""]
-    #   interval: 10s
-    #   start_period: 10s
-    #   retries: 5
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8083/health')\""]
+      interval: 10s
+      start_period: 15s
+      retries: 5
 
   pipeline_runner:
     build:
@@ -88,10 +88,28 @@ services:
       start_period: 10s
       retries: 5
 
-  # agent_service:     ← pendiente
+  agent_service:
+    build:
+      context: agent_service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file: .env
+    depends_on:
+      chat_service:
+        condition: service_healthy
+      vector_store_service:
+        condition: service_started
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/health')\""]
+      interval: 10s
+      start_period: 15s
+      retries: 5
+
   # frontend_service:  ← pendiente
 
 volumes:
   vector_database:
-  chat_database:    # mounted by postgres container
+  chat_database:
   raw_data:

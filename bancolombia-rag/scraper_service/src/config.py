@@ -31,7 +31,7 @@ class Settings:
     delay: float = float(os.getenv("SCRAPER_DELAY_SECONDS", "1.0"))
 
     # Hard cap on how many pages are visited. Prevents runaway crawls.
-    max_pages: int = int(os.getenv("SCRAPER_MAX_PAGES", "200"))
+    max_pages: int = int(os.getenv("SCRAPER_MAX_PAGES", "60"))
 
     # Output file written by this service and read by vector_store_service.
     # Both services mount the same raw_data Docker volume.

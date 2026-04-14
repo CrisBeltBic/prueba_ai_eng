@@ -24,6 +24,8 @@ import httpx
 SCRAPER_URL = os.getenv("SCRAPER_SERVICE_URL", "http://scraper_service:8083")
 STORE_URL = os.getenv("VECTOR_STORE_SERVICE_URL", "http://vector_store_service:8084")
 POLL_INTERVAL = int(os.getenv("PIPELINE_POLL_SECONDS", "5"))
+SCRAPER_MAX_PAGES = int(os.getenv("SCRAPER_MAX_PAGES", "10"))
+SCRAPER_DELAY = float(os.getenv("SCRAPER_DELAY_SECONDS", "1.0"))
 
 
 def log(msg: str) -> None:
@@ -62,15 +64,15 @@ def poll_until_done(status_url: str, job_id: str) -> None:
 
 
 def main() -> None:
-    # ── Step 1: Scraping ───────────────────────────────────────────────────────
+    # Step 1: Scraping
     log("Starting scraper...")
-    result = post(f"{SCRAPER_URL}/scraper/start", body={"max_pages": 5, "delay": 1.0})
+    result = post(f"{SCRAPER_URL}/scraper/start", body={"max_pages": SCRAPER_MAX_PAGES, "delay": SCRAPER_DELAY})
     job_id = result["job_id"]
     log(f"Scraper job started: {job_id}")
     poll_until_done(f"{SCRAPER_URL}/scraper/status", job_id)
     log("Scraping complete.")
 
-    # ── Step 2: Ingestion ──────────────────────────────────────────────────────
+    #  Step 2: Ingestion 
     log("Starting ingestion...")
     result = post(f"{STORE_URL}/ingest/start")
     job_id = result["job_id"]

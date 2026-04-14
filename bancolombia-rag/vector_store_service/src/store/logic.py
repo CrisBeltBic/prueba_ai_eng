@@ -97,6 +97,7 @@ def search(query: str, top_k: int, category: str | None) -> list[dict]:
 
     for result in results:
         result["context"] = _build_context(result["url"], result["chunk_index"])
+        result.pop("text", None)
 
     return results
 

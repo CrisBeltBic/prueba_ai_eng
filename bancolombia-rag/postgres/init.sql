@@ -5,7 +5,7 @@ SET client_encoding = 'UTF8'; --Encoding
 SET search_path TO public;
 
 
--- ── Tables ─────────────────────────────────────────────────────────────────────
+-- Tables
 CREATE TABLE IF NOT EXISTS chats (
     chat_id    VARCHAR(255) NOT NULL,
     user_id    VARCHAR(255),               -- nullable, reserved for future auth
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS chats (
     PRIMARY KEY (chat_id, timestamp)
 );
 
--- ── Indexes ────────────────────────────────────────────────────────────────────
+-- Indexes
 -- Speeds up the most common query: fetch all messages for a given chat_id
 CREATE INDEX IF NOT EXISTS idx_chats_chat_id  ON chats(chat_id);
 

@@ -8,7 +8,10 @@ Run standalone for testing:
     python knowledge_server/server.py
 """
 
-import asyncio
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from mcp.server.fastmcp import FastMCP
 
@@ -20,11 +23,7 @@ mcp = FastMCP("bancolombia-knowledge")
 # Tools
 
 @mcp.tool()
-async def search_knowledge_base(
-    query: str,
-    top_k: int = 5,
-    category: str | None = None,
-) -> list[dict]:
+async def search_knowledge_base(query: str, top_k: int = 5) -> list[dict]:
     """Search knowledge base using a natural language query.
 
     Returns the most relevant document chunks with their source URLs and
@@ -32,12 +31,11 @@ async def search_knowledge_base(
     products, services, rates, or any information that may be on their website.
 
     Args:
-        query:    The user's question in natural language.
-        top_k:    Number of results to return (default 5).
-        category: Optional filter by category (e.g. 'creditos', 'cuentas').
+        query: The user's question in natural language.
+        top_k: Number of results to return (default 5).
     """
     try:
-        return await logic.search(query, top_k, category)
+        return await logic.search(query, top_k, category=None)
     except Exception as e:
         return [{"error": str(e)}]
 

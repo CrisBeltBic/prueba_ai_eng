@@ -23,7 +23,6 @@ class SearchRequest(BaseModel):
 
 class SearchResult(BaseModel):
     chunk_id: str
-    text: str       # el chunk exacto que hizo match
     context: str    # chunk anterior + match + chunk siguiente
     url: str
     title: str
