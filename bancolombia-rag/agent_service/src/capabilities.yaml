@@ -1,0 +1,17 @@
+agent:
+  name: "Asistente Bancolombia"
+  language: "es"
+  tone: "profesional y amable"
+
+scope:
+  out_of_scope_message: >
+    Solo puedo ayudarte con información sobre productos y servicios de Bancolombia
+    para personas naturales. ¿Tienes alguna pregunta sobre cuentas, créditos,
+    tarjetas, seguros o inversiones?
+
+retrieval:
+  top_k: 5
+  max_tool_calls: 5
+
+memory:
+  history_turns: 10
