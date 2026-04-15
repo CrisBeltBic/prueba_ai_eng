@@ -41,9 +41,7 @@ Si la información no está disponible en la base de conocimiento, indícalo cla
 Responde siempre en español."""
 
 
-# ---------------------------------------------------------------------------
 # AgentLogic
-# ---------------------------------------------------------------------------
 
 class AgentLogic:
     def __init__(self, chat_service_url: str) -> None:

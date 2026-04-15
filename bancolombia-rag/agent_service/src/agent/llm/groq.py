@@ -60,7 +60,10 @@ def _parse_failed_generation(error: BadRequestError) -> dict | None:
     try:
         body = error.response.json()
         failed = body.get("error", {}).get("failed_generation", "")
-        match = re.search(r"<function=(\w+)\s*(\{.*?\})\s*</function>", failed, re.DOTALL)
+        # Handles both formats Groq models emit:
+        #   <function=name {"arg": val}</function>
+        #   <function=name({"arg": val})</function>
+        match = re.search(r"<function=(\w+)\(?\s*(\{.*?\})\s*\)?</function>", failed, re.DOTALL)
         if not match:
             return None
         name = match.group(1)

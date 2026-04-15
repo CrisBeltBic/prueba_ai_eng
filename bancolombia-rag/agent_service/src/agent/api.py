@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from agent.logic import AgentLogic
 from config import settings
+from helpers.auth import verify_api_key
 from schemas.chat import ChatRequest, ChatResponse
 
 router = APIRouter()
 
 
-# Dependency
+# Dependencies
 def get_logic(request: Request) -> AgentLogic:
     """Retrieve the shared AgentLogic instance stored in app.state."""
     logic: AgentLogic | None = request.app.state.logic
@@ -14,9 +15,10 @@ def get_logic(request: Request) -> AgentLogic:
         raise HTTPException(status_code=503, detail="Agent not ready")
     return logic
 
+
 # Endpoints
-@router.post("/chat", response_model=ChatResponse)
-async def chat( req: ChatRequest, logic: AgentLogic = Depends(get_logic)) -> ChatResponse:
+@router.post("/chat", response_model=ChatResponse, dependencies=[Depends(verify_api_key)])
+async def chat(req: ChatRequest, logic: AgentLogic = Depends(get_logic)) -> ChatResponse:
     result = await logic.chat(message=req.message, chat_id=req.chat_id)
     return ChatResponse(**result)
 

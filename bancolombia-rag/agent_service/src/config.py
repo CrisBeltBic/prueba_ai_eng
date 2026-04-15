@@ -19,6 +19,9 @@ class Settings:
         "CHAT_SERVICE_URL", "http://chat_service:8082"
     )
 
+    # Security
+    agent_api_service_key: str = os.getenv("AGENT_API_SERVICE_KEY", "")
+
     # LLM configuration
     llm_provider: str = os.getenv("LLM_PROVIDER", "groq")
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
