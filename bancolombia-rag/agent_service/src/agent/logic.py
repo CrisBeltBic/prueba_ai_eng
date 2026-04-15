@@ -96,7 +96,7 @@ class AgentLogic:
         sources: list[str] = []
         #print(f"tools: {tools}", flush=True)
 
-        for iteration in range(_MAX_TOOL_CALLS):
+        for _iteration in range(_MAX_TOOL_CALLS):
             #print(f"\n[{iteration + 1}] mensajes en contexto: {len(messages)}", flush=True)
             response = await self._llm.chat(messages, tools=tools)
             #print(f"[ {iteration + 1}] respuesta del LLM recibida; {response}", flush=True)
@@ -130,9 +130,8 @@ class AgentLogic:
                     #print(f"[react loop {iteration + 1}] resultado: {len(result)} items", flush=True)
 
                     for item in result:
-                        if isinstance(item, dict) and item.get("url"):
-                            if item["url"] not in sources:
-                                sources.append(item["url"])
+                        if isinstance(item, dict) and item.get("url") and item["url"] not in sources:
+                            sources.append(item["url"])
 
                     messages.append({
                         "role": "tool",

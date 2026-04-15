@@ -12,6 +12,7 @@ The vector store is initialised lazily on first use (_get_store). This avoids a 
 at startup if ChromaDB is not yet ready, and lets the health check respond immediately.
 """
 
+import contextlib
 import json
 import uuid
 from datetime import datetime
@@ -77,7 +78,7 @@ def run_ingest(job_id: str) -> None:
             chunks = split_into_chunks(page, settings.chunk_size, settings.chunk_overlap)
             texts = [c["text"] for c in chunks]
             embeddings = embed_texts(texts)
-            for chunk, embedding in zip(chunks, embeddings):
+            for chunk, embedding in zip(chunks, embeddings, strict=True):
                 chunk["embedding"] = embedding
             _get_store().upsert(chunks)
             status["chunks_indexed"] = status.get("chunks_indexed", 0) + len(chunks)
@@ -141,8 +142,6 @@ def _read_jsonl(path) -> list[dict]:
         for line in f:
             line = line.strip()
             if line:
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     pages.append(json.loads(line))
-                except json.JSONDecodeError:
-                    pass
     return pages
