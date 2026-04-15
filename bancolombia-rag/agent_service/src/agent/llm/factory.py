@@ -7,9 +7,8 @@ To add a new provider:
   3. Set LLM_PROVIDER in .env.
 """
 
-from config import settings
-
 from agent.llm.base import LLMClient
+from config import settings
 
 
 def create_llm() -> LLMClient:

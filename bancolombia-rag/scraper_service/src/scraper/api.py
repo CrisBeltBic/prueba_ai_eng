@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks
 
-from scraper import logic
 from schemas.scraper import JobStatus, ScrapeRequest
+from scraper import logic
 
 router = APIRouter()
 

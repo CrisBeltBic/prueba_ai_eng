@@ -4,6 +4,7 @@
 import uuid
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
+
 from chat.logic import _parse_row, add_message, get_messages
 
 
