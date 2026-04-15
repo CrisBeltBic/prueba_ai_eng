@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+
+  test-vector-store:
+    name: Tests — vector_store_service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t vs-test vector_store_service/
+      - name: Run tests
+        run: docker run vs-test pytest /app/tests/ -v
+
+  test-agent:
+    name: Tests — agent_service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t agent-test agent_service/
+      - name: Run tests
+        run: docker run agent-test pytest /app/tests/ -v
+
+  test-chat:
+    name: Tests — chat_service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t chat-test chat_service/
+      - name: Run tests
+        run: docker run chat-test pytest /app/tests/ -v
