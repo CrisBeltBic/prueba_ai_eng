@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: ruff check .
+      - run: ruff check bancolombia-rag/
 
   test-vector-store:
     name: Tests — vector_store_service
@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build image
-        run: docker build -t vs-test vector_store_service/
+        run: docker build -t vs-test bancolombia-rag/vector_store_service/
       - name: Run tests
         run: docker run vs-test pytest /app/tests/ -v
 
@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build image
-        run: docker build -t agent-test agent_service/
+        run: docker build -t agent-test bancolombia-rag/agent_service/
       - name: Run tests
         run: docker run agent-test pytest /app/tests/ -v
 
@@ -45,6 +45,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build image
-        run: docker build -t chat-test chat_service/
+        run: docker build -t chat-test bancolombia-rag/chat_service/
       - name: Run tests
         run: docker run chat-test pytest /app/tests/ -v
