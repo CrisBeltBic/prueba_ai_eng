@@ -1,3 +1,9 @@
+# -------------------------------------------------------------------------
+# Copyright. All rights reserved.
+# by Cristian Beltran
+# --------------------------------------------------------------------------
+
+
 from fastapi import APIRouter, BackgroundTasks
 
 from schemas.scraper import JobStatus, ScrapeRequest

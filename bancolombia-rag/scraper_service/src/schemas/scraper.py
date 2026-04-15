@@ -1,8 +1,14 @@
+# -------------------------------------------------------------------------
+# Copyright. All rights reserved.
+# by Cristian Beltran
+# --------------------------------------------------------------------------
+
+
 from pydantic import BaseModel
 
 
 class ScrapeRequest(BaseModel):
-    max_pages: int = 200
+    max_pages: int = 60
     delay: float = 1.0
 
 

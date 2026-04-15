@@ -1,3 +1,9 @@
+# -------------------------------------------------------------------------
+# Copyright. All rights reserved.
+# by Cristian Beltran
+# --------------------------------------------------------------------------
+
+
 """
 HTML parsing helpers for bancolombia.com.
 
@@ -20,7 +26,7 @@ from bs4 import BeautifulSoup
 
 
 def extract_links(html: str, current_url: str) -> list[str]:
-    """Finds all internal Bancolombia /personas links in an HTML page."""
+    """Finds all internal pages links in an HTML page."""
     soup = BeautifulSoup(html, "html.parser")
     links = []
     for tag in soup.find_all("a", href=True):
