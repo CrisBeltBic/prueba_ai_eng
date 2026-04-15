@@ -11,9 +11,11 @@ State managed via st.session_state:
   messages  list[dict]   — displayed messages [{role, content, sources}].
 """
 
-import streamlit as st
-from api_client import AgentClient, ChatClient
 from datetime import datetime
+
+import streamlit as st
+
+from api_client import AgentClient, ChatClient
 
 # Config
 st.set_page_config(

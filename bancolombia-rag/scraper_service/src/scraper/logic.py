@@ -10,6 +10,7 @@ Concurrency is controlled by asyncio.Semaphore to limit simultaneous open connec
 """
 
 import asyncio
+import contextlib
 import json
 import uuid
 from datetime import datetime
@@ -48,11 +49,8 @@ def _load_robots(base_url: str, user_agent: str) -> RobotFileParser:
     """Fetches and parses robots.txt. If unreachable, allows everything."""
     rp = RobotFileParser()
     rp.set_url(f"{base_url}/robots.txt")
-    try:
-        rp.read()
-    except Exception:
-        # If robots.txt is unreachable we proceed — public site, no restriction found
-        pass
+    with contextlib.suppress(Exception):
+        rp.read()  # If robots.txt is unreachable we proceed — public site, no restriction found
     return rp
 
 

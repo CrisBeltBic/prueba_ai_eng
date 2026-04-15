@@ -4,7 +4,7 @@
 import uuid
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
-from chat.logic import _parse_row, add_message, add_message, get_messages
+from chat.logic import _parse_row, add_message, get_messages
 
 
 # _parse_row — pure function, no mocking needed
