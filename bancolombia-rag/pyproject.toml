@@ -8,7 +8,7 @@ ignore = ["E501", "B008"]
 
 [tool.ruff.lint.isort]
 known-first-party = [
-    "agent", "chat", "store", "scraper", "config",
+    "agent", "api_client", "chat", "store", "scraper", "config",
     "helpers", "schemas", "knowledge_server", "db",
 ]
 known-third-party = [

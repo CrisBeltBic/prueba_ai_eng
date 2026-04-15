@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 
 from store.logic import get_by_url, get_stats, list_categories, search
 
-
 # Helpers
 
 def _make_store(

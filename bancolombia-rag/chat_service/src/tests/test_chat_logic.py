@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, patch
 
 from chat.logic import _parse_row, add_message, get_messages
 
-
 # _parse_row — pure function, no mocking needed
 
 def test_parse_row_deserializes_sources_string():
